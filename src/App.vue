@@ -1,22 +1,55 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <Game v-if="isPlaying" />
+    <EndGame v-else-if="winner" />
+    <div v-else class="new-game">
+      <DifficultySelect />
+      <hr>
+      <button @click="handleStartGame">Oyunu Başlat</button>
+    </div>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import Game from './components/Game.vue';
+import store from './store';
+import { mapActions, mapState } from 'vuex';
+import turkishNameStoreService from '@/services/TurkishNameStoreService';
+import { actions, turn } from '@/store/game.module';
+import textToSpeechService from '@/services/TextToSpeechService';
+import DifficultySelect from '@/components/DifficultySelect';
+import EndGame from '@/components/EndGame';
 
 export default {
-  name: 'App',
+  name: 'WordChainGame',
+  store,
+  computed: {
+    ...mapState('game', [ 'isPlaying', 'score', 'winner' ]),
+    ...mapState('settings', [ 'difficulty' ]),
+    isPlayerWon() {
+      return this.winner === turn.PLAYER;
+    },
+  },
   components: {
-    HelloWorld
-  }
-}
+    EndGame,
+    DifficultySelect,
+    Game,
+  },
+  methods: {
+    ...mapActions('game', { startGame: actions.START_GAME, resetGame: actions.RESET }),
+    handleStartGame() {
+      const randomName = turkishNameStoreService.getRandomName();
+      this.startGame(randomName);
+      textToSpeechService.speak(`ilk isim, ${ randomName }`);
+    },
+    handleReset() {
+      this.resetGame();
+    },
+  },
+};
 </script>
 
-<style>
+<style scoped>
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
