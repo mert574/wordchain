@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <h1>WordChain</h1>
     <Game v-if="isPlaying" />
     <EndGame v-else-if="winner" />
     <div v-else class="new-game">
@@ -40,7 +41,7 @@ export default {
     handleStartGame() {
       const randomName = turkishNameStoreService.getRandomName();
       this.startGame(randomName);
-      textToSpeechService.speak(`ilk isim, ${ randomName }`);
+      textToSpeechService.speak(`ilk isim, ${ randomName }`, 1);
     },
     handleReset() {
       this.resetGame();

@@ -3,10 +3,18 @@
     <hr>
     <div>score: {{ score }}</div>
     <div>turn: {{ turn }}</div>
-    <div>isPlaying: {{ isPlaying ? 'yes' : 'no' }}</div>
     <div>Last Name: {{ previousName }}</div>
+    <Countdown
+        v-if="isPlayerTurn"
+        :time="countdownTime"
+        :interval="100"
+        @end="handlePlayerTimeout">
+      <template slot-scope="props">
+        {{ (props.totalMilliseconds / 1000).toFixed(1) }} seconds.
+      </template>
+    </Countdown>
     <hr>
-    <input type="text" v-model="name" />
+    <input type="text" v-model="name" @keyup.enter="handleAttempt" />
     <button @click="handleAttempt" :disabled="!isPlaying || !isPlayerTurn">attempt</button>
   </div>
 </template>
@@ -19,9 +27,13 @@ import lastCharOfLastItemInList from '@/util/lastCharOfLastItemInList';
 import textToSpeechService from '@/services/TextToSpeechService';
 import random from 'lodash/random';
 import sample from 'lodash/sample';
+import Countdown from '@chenfengyuan/vue-countdown';
 
 export default {
   name: 'HelloWorld',
+  components: {
+    Countdown,
+  },
   computed: {
     ...mapState('game', [ 'score', 'turn', 'isPlaying', 'previousNames' ]),
     ...mapGetters('settings', [ 'activeSettings' ]),
@@ -36,23 +48,18 @@ export default {
     return {
       name: '',
       playerTimeout: null,
+      countdownTime: 0,
     };
   },
-  beforeDestroy() {
-    clearTimeout(this.playerTimeout);
+  beforeMount() {
+    this.countdownTime = this.activeSettings.playerRoundTimeMs;
   },
   watch: {
     turn: {
       immediate: true,
       handler(curr) {
-        clearTimeout(this.playerTimeout);
         if (curr === turn.COMPUTER) {
           this.handleComputerTurn();
-        } else {
-          this.playerTimeout = setTimeout(() => {
-            this.playerLost();
-            textToSpeechService.speak('Süren doldu! Kaybettin.');
-          }, this.activeSettings.playerRoundTimeMs);
         }
       },
     },
@@ -61,29 +68,42 @@ export default {
     ...mapActions('game', {
       attemptRound: actions.ATTEMPT_ROUND,
       startGame: actions.START_GAME,
-      playerLost: actions.CURRENT_PLAYER_LOST,
+      currentPlayerLost: actions.CURRENT_PLAYER_LOST,
     }),
+    handlePlayerTimeout() {
+      this.currentPlayerLost();
+      textToSpeechService.speak('Süren doldu! Kaybettin.', 0);
+    },
     handleAttempt() {
+      if (!this.isPlayerTurn || !this.isPlaying) {
+        return;
+      }
       try {
         this.attemptRound(this.name);
+        this.name = '';
       } catch (error) {
-        textToSpeechService.speak(`Üzgünüm, ${ error.message }`);
+        textToSpeechService.speak(`Üzgünüm, ${ error.message }`, 0);
       }
     },
     handleComputerTurn() {
       const waitTime = random(this.activeSettings.computerThinkTimeRangeMs[0], this.activeSettings.computerThinkTimeRangeMs[1]);
+      const previousLastChar = lastCharOfLastItemInList(this.previousNames);
+      const suitableNames = turkishNameStoreService
+          .findStartingWith(previousLastChar)
+          .filter(it => !this.previousNames.includes(it));
+
       setTimeout(() => {
-        const previousLastChar = lastCharOfLastItemInList(this.previousNames);
-        const suitableNames = turkishNameStoreService.findStartingWith(previousLastChar);
-        const selectedName = sample(suitableNames.filter(it => !this.previousNames.includes(it)));
         try {
+          const selectedName = sample(suitableNames);
           this.attemptRound(selectedName);
-          textToSpeechService.speak(selectedName);
+          textToSpeechService.speak(selectedName, 1);
         } catch (error) {
-          textToSpeechService.speak(`Tebrikler! kazandın. Skorun: ${ this.score }`);
-          console.info('KAZANDIN!', error);
+          this.playerWins();
         }
       }, waitTime);
+    },
+    playerWins() {
+      textToSpeechService.speak(`Tebrikler! kazandın. Skorun: ${ this.score }`, 0);
     },
   },
 };

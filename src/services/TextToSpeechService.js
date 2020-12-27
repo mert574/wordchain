@@ -1,16 +1,14 @@
 class TextToSpeechService {
     constructor(language = 'tr-TR') {
-        this.synthesisUtterance = new window.SpeechSynthesisUtterance();
-        this.synthesisUtterance.lang = language;
+        this.utterance = new window.SpeechSynthesisUtterance();
+        this.utterance.lang = language;
     }
 
-    speak(sentence) {
-        return new Promise((resolve, reject) => {
-            this.synthesisUtterance.text = sentence;
-            this.synthesisUtterance.onend = resolve;
-            this.synthesisUtterance.onerror = reject;
-            window.speechSynthesis.speak(this.synthesisUtterance);
-        });
+    speak(sentence, actorId = 0) {
+        this.utterance.text = sentence;
+        this.utterance.pitch = actorId;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(this.utterance);
     }
 }
 
