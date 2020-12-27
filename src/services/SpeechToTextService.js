@@ -54,7 +54,7 @@ class SpeechToTextService {
                     const split = result.split(' ');
                     result = split[split.length - 1];
                 }
-                console.log('received', result);
+                console.debug('received', result);
                 clearTimeout(timeout);
                 resolve(result);
                 this.handle.stop();

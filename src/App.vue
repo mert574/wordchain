@@ -21,6 +21,7 @@ import { actions, turn } from '@/store/game.module';
 import DifficultySelect from '@/components/DifficultySelect';
 import EndGame from '@/views/EndGame';
 import speechToTextService from '@/services/SpeechToTextService';
+import textToSpeechService from '@/services/TextToSpeechService';
 
 export default {
   name: 'WordChainGame',
@@ -59,7 +60,11 @@ export default {
       }
 
       const randomName = turkishNameStoreService.getRandomName();
-      this.startGame(randomName);
+      textToSpeechService.speak(`ilk kelime; ${ randomName }`, 1).then(() => {
+        this.startGame(randomName);
+      }).finally(() => {
+        this.starting = false;
+      });
     },
     handleReset() {
       this.resetGame();
