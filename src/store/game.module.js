@@ -73,7 +73,7 @@ const game = {
                 dispatch(actions.CURRENT_PLAYER_LOST);
                 throw new Error('Bu isim daha önce kullanıldı.');
             }
-            if (!turkishNameStoreService.includes(name)) {
+            if (!turkishNameStoreService.exists(name)) {
                 dispatch(actions.CURRENT_PLAYER_LOST);
                 throw new Error('Bu kelime bir isim değil.');
             }

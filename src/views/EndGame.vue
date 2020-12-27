@@ -1,8 +1,10 @@
 <template>
   <section class="end-game">
-    {{ isPlayerWon ? 'KAZANDIN' : 'KAYBETTIN' }}
     <div class="score">
-      <strong>Skor:</strong>{{ score }}
+      <strong>Skor:</strong> {{ score }}
+    </div>
+    <div>
+      {{ isPlayerWon ? 'Kazandın' : 'Kaybettin' }}.
     </div>
     <button @click="handleReset">Yeniden Başlat</button>
   </section>

@@ -1,6 +1,6 @@
 <template>
   <section class="difficulty-select">
-    Bir zorluk sec:
+    Bir zorluk seç:
     <button
         :class="{ selected: difficulty === difficultyLevels.EASY}"
         @click="setDifficulty(difficultyLevels.EASY)">
@@ -41,6 +41,6 @@ export default {
 
 <style scoped>
 button.selected {
-  border: 2px solid blue;
+  border: 3px solid #ff0099;
 }
 </style>

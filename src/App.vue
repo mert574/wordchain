@@ -1,47 +1,65 @@
 <template>
-  <div id="app">
+  <div>
     <h1>WordChain</h1>
     <Game v-if="isPlaying" />
     <EndGame v-else-if="winner" />
     <div v-else class="new-game">
       <DifficultySelect />
       <hr>
-      <button @click="handleStartGame">Oyunu Başlat</button>
+      <button @click="handleStartGame" :disabled="starting">{{ buttonText }}</button>
     </div>
   </div>
 </template>
 
 <script>
-import Game from './components/Game.vue';
+import './global.css';
+import Game from './views/Game.vue';
 import store from './store';
 import { mapActions, mapState } from 'vuex';
 import turkishNameStoreService from '@/services/TurkishNameStoreService';
 import { actions, turn } from '@/store/game.module';
-import textToSpeechService from '@/services/TextToSpeechService';
 import DifficultySelect from '@/components/DifficultySelect';
-import EndGame from '@/components/EndGame';
+import EndGame from '@/views/EndGame';
+import speechToTextService from '@/services/SpeechToTextService';
 
 export default {
   name: 'WordChainGame',
   store,
+  components: {
+    EndGame,
+    DifficultySelect,
+    Game,
+  },
   computed: {
     ...mapState('game', [ 'isPlaying', 'score', 'winner' ]),
     ...mapState('settings', [ 'difficulty' ]),
     isPlayerWon() {
       return this.winner === turn.PLAYER;
     },
+    buttonText() {
+      return this.starting ? 'Başlatılıyor...' : 'Oyunu Başlat';
+    },
   },
-  components: {
-    EndGame,
-    DifficultySelect,
-    Game,
+  data() {
+    return {
+      starting: false,
+    };
   },
   methods: {
     ...mapActions('game', { startGame: actions.START_GAME, resetGame: actions.RESET }),
-    handleStartGame() {
+    async handleStartGame() {
+      this.starting = true;
+      try {
+        await speechToTextService.requestPermission();
+      } catch (error) {
+        this.starting = false;
+        console.error('speechToTextService.requestPermission:', error);
+        alert('Mikrofon izni alınırken bir hata oluştu.');
+        return;
+      }
+
       const randomName = turkishNameStoreService.getRandomName();
       this.startGame(randomName);
-      textToSpeechService.speak(`ilk isim, ${ randomName }`, 1);
     },
     handleReset() {
       this.resetGame();
@@ -49,14 +67,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>

@@ -35,13 +35,13 @@ const settings = {
                     ...base,
                     playerRoundTimeMs: 6_000,
                     computerThinkTimeRangeMs: [ 1000, 2000 ],
-                    computerChanceToLosePercent: 10,
+                    computerChanceToLosePercent: 5,
                 },
                 [difficultyLevels.HARD]: {
                     ...base,
                     playerRoundTimeMs: 4_000,
                     computerThinkTimeRangeMs: [ 500, 1000 ],
-                    computerChanceToLosePercent: 5,
+                    computerChanceToLosePercent: 1,
                 },
             },
         };

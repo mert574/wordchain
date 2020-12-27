@@ -1,21 +1,26 @@
 <template>
   <div class="hello">
     <hr>
-    <div>score: {{ score }}</div>
-    <div>turn: {{ turn }}</div>
-    <div>Last Name: {{ previousName }}</div>
-    <Countdown
-        v-if="isPlayerTurn"
-        :time="countdownTime"
-        :interval="100"
-        @end="handlePlayerTimeout">
-      <template slot-scope="props">
-        {{ (props.totalMilliseconds / 1000).toFixed(1) }} seconds.
-      </template>
-    </Countdown>
-    <hr>
-    <input type="text" v-model="name" @keyup.enter="handleAttempt" />
-    <button @click="handleAttempt" :disabled="!isPlaying || !isPlayerTurn">attempt</button>
+    <div>Skor: {{ score }}</div>
+    <div class="previous-name">{{ previousName }}</div>
+    <div v-show="isPlayerTurn" class="player-turn">
+      <Countdown
+          v-if="isPlayerTurn"
+          :time="countdownTime"
+          :interval="100"
+          :auto-start="false"
+          ref="countdown"
+          @end="handlePlayerTimeout">
+        <template slot-scope="props">
+          {{ (props.totalMilliseconds / 1000).toFixed(1) }} saniye süren kaldı.
+        </template>
+      </Countdown>
+      <hr>
+      {{ listening ? 'şimdi konuş' : 'bekle' }}
+    </div>
+    <div v-show="!isPlayerTurn" class="computer-turn">
+      Sıra bilgisayarda...
+    </div>
   </div>
 </template>
 
@@ -28,9 +33,10 @@ import textToSpeechService from '@/services/TextToSpeechService';
 import random from 'lodash/random';
 import sample from 'lodash/sample';
 import Countdown from '@chenfengyuan/vue-countdown';
+import speechToTextService from '@/services/SpeechToTextService';
 
 export default {
-  name: 'HelloWorld',
+  name: 'Game',
   components: {
     Countdown,
   },
@@ -49,6 +55,7 @@ export default {
       name: '',
       playerTimeout: null,
       countdownTime: 0,
+      listening: false,
     };
   },
   beforeMount() {
@@ -57,9 +64,12 @@ export default {
   watch: {
     turn: {
       immediate: true,
-      handler(curr) {
+      async handler(curr) {
+        this.listening = false;
         if (curr === turn.COMPUTER) {
           this.handleComputerTurn();
+        } else {
+          this.handlePlayerTurn();
         }
       },
     },
@@ -105,9 +115,21 @@ export default {
           this.attemptRound(selectedName);
           textToSpeechService.speak(selectedName, 1);
         } catch (error) {
+          this.currentPlayerLost();
           this.playerWins();
         }
       }, waitTime);
+    },
+    async handlePlayerTurn() {
+      try {
+        await textToSpeechService.speak(this.previousName, 1);
+        this.listening = true;
+        this.$refs.countdown.start();
+        this.name = await speechToTextService.listenForWord(this.activeSettings.playerRoundTimeMs);
+        this.handleAttempt();
+      } catch (error) {
+        this.currentPlayerLost();
+      }
     },
     playerWins() {
       textToSpeechService.speak(`Tebrikler! kazandın. Skorun: ${ this.score }`, 0);
@@ -117,4 +139,7 @@ export default {
 </script>
 
 <style scoped>
+.previous-name {
+  font-size: 2em;
+}
 </style>
