@@ -93,6 +93,13 @@ export default {
           .filter(it => !this.previousNames.includes(it));
 
       setTimeout(() => {
+        const shouldLose = random(0, 100) <= this.activeSettings.computerChanceToLosePercent;
+        if (shouldLose) {
+          this.currentPlayerLost();
+          this.playerWins();
+          return;
+        }
+
         try {
           const selectedName = sample(suitableNames);
           this.attemptRound(selectedName);

@@ -46,8 +46,8 @@ const game = {
             state.previousNames.push(name);
         },
         [mutations.SWITCH_TURN](state) {
-            const current = state.turn;
-            state.turn = current === turn.COMPUTER ? turn.PLAYER : turn.COMPUTER;
+            const currentTurn = state.turn;
+            state.turn = currentTurn === turn.COMPUTER ? turn.PLAYER : turn.COMPUTER;
         },
         [mutations.ADD_SCORE](state, amount) {
             state.score += amount;
@@ -65,7 +65,7 @@ const game = {
         [actions.RESET]({ commit }) {
             commit(mutations.RESET);
         },
-        [actions.ATTEMPT_ROUND]({ state, commit, dispatch }, name) {
+        [actions.ATTEMPT_ROUND]({ state, commit, dispatch, rootGetters }, name) {
             if (!state.isPlaying) {
                 throw new Error('Oyun henüz başlamadı.');
             }
@@ -86,7 +86,8 @@ const game = {
             }
 
             if (state.turn === turn.PLAYER) {
-                commit(mutations.ADD_SCORE, 1);
+                const { scorePerTurn } = rootGetters['settings/activeSettings'];
+                commit(mutations.ADD_SCORE, scorePerTurn);
             }
             commit(mutations.ADD_NAME, name);
             commit(mutations.SWITCH_TURN);
